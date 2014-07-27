@@ -39,7 +39,7 @@ void create_window() {
 		    500, 500);
 
   /* context for filling with white */
-  xcb_gcontext_t fill = xcb_generate_id(c);
+  fill = xcb_generate_id(c);
   mask = XCB_GC_FOREGROUND | XCB_GC_BACKGROUND;
   values[0] = screen->white_pixel;
   values[1] = screen->white_pixel;
@@ -67,7 +67,8 @@ void create_window() {
   xcb_map_window (c, win);
 
   /* fill the pixmap with white (it starts empty) */
-  xcb_poly_fill_rectangle (c, pid, fill, 1, (xcb_rectangle_t[]){{ 0, 0, 500, 500}});
+  xcb_poly_fill_rectangle(c, pid, fill, 1, (xcb_rectangle_t[]){{ 0, 0, 500, 500}});
+  
 }
 
 
@@ -78,11 +79,13 @@ void event_loop() {
 
     case XCB_KEY_PRESS: {
       /* fill pixmap with white */
-      xcb_poly_fill_rectangle (c, pid, fill, 1, (xcb_rectangle_t[]){{ 0, 0, 500, 500}});
-      /* clear win to reveal pixmap */
-      xcb_clear_area(c, 1, win,0, 0, 500,500);
+      /* why isn't this happening */
+      xcb_poly_fill_rectangle_checked(c, pid, fill, 1, (xcb_rectangle_t[]){{ 0, 0, 500, 500}});
       
-      xcb_flush (c);
+      /* clear win to reveal pixmap */
+      xcb_clear_area(c, 1, win, 0, 0, 500,500);
+      
+      xcb_flush(c);
       break;
     }
 
@@ -120,6 +123,11 @@ void event_loop() {
       xcb_poly_line (c, XCB_COORD_MODE_PREVIOUS, win, foreground, 2, points);
 
       xcb_flush (c);
+      break;
+    }
+    case XCB_EXPOSE: {
+      
+      xcb_flush(c);
       break;
     }
     default: {
