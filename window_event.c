@@ -29,7 +29,7 @@ xcb_drawable_t create_sub_window(xcb_drawable_t parent, xcb_gravity_t gravity) {
   xcb_create_window (c,
                      XCB_COPY_FROM_PARENT,
                      swin,
-		     win,
+		     parent,
                      0, 0,
                      50, 50,
                      2,
