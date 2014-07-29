@@ -9,6 +9,7 @@ xcb_connection_t    *c;
 xcb_screen_t        *screen;
 xcb_gcontext_t       gc;
 xcb_drawable_t       win;
+xcb_drawable_t back_pixmap;
 
 /*  event callback functin pointer
     int -> void
@@ -149,6 +150,18 @@ void create_window() {
   uint32_t mask = 0;
   uint32_t values[3];
 
+  back_pixmap = xcb_generate_id (c);
+  xcb_create_pixmap(c,
+		    screen->root_depth,
+		    back_pixmap,
+		    screen->root,
+		    800, 800);
+  /* context for filling with white */
+  xcb_gcontext_t fill = xcb_generate_id(c);
+  mask = XCB_GC_FOREGROUND;
+  values[0] = screen->white_pixel;
+  xcb_create_gc(c, fill, back_pixmap, mask,values);
+
   /* create graphics context */
   gc = xcb_generate_id (c);
   mask = XCB_GC_FOREGROUND | XCB_GC_BACKGROUND | XCB_GC_GRAPHICS_EXPOSURES;
@@ -159,8 +172,8 @@ void create_window() {
  
   /* create the window */
   win = xcb_generate_id(c);
-  mask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
-  values[0] = screen->white_pixel;
+  mask = XCB_CW_BACK_PIXMAP  | XCB_CW_EVENT_MASK;
+  values[0] = back_pixmap;
   values[1] = XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_STRUCTURE_NOTIFY
     | XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_BUTTON_MOTION;
   xcb_create_window (c,                             /* connection    */
@@ -175,6 +188,7 @@ void create_window() {
                      mask, values);                 /* masks         */
 
   xcb_map_window(c, win);
+  xcb_poly_fill_rectangle(c, back_pixmap, fill, 1, (xcb_rectangle_t[]){{ 0, 0, 800, 800}});
 }
 
 
@@ -297,6 +311,9 @@ xcb_gcontext_t create_graphics_context(uint32_t color) {
 }
 
 void drop_paint(xcb_gcontext_t cgc, button_t *b) {
+  
+  xcb_poly_fill_rectangle(c, back_pixmap, cgc, 1,
+			  (xcb_rectangle_t[]){{ b->origin[0]-5, b->origin[1]-5, 5, 5}});
   xcb_poly_fill_rectangle(c, win, cgc, 1,
 			  (xcb_rectangle_t[]){{ b->origin[0]-5, b->origin[1]-5, 5, 5}});
 }
