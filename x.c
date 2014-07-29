@@ -28,7 +28,7 @@ int x_create_window(int x, int y, int w, int h) {
   
   mask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
   values[0] = screen->white_pixel;
-  values[1] = XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_KEY_PRESS;
+  values[1] = XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_STRUCTURE_NOTIFY;
   
   window = xcb_generate_id(connection);
   cookie = xcb_create_window(connection,
@@ -83,8 +83,9 @@ void x_draw_line(int window, int graphics_context, int x1, int y1, int x2, int y
 }
 
 typedef void (fptr_t)(int);
+typedef void (fptr_configure_t)(int,int,int);
 
-void x_handle_events(fptr_t ptr) {
+void x_handle_events(fptr_t ptr_expose, fptr_configure_t ptr_configure) {
   xcb_generic_event_t *event;
   
   if(!initialized) return;
@@ -94,10 +95,17 @@ void x_handle_events(fptr_t ptr) {
   while(event = xcb_wait_for_event(connection)) {
     switch(event->response_type) {
     case XCB_EXPOSE:
-      
-      ptr(17);
+      ptr_expose(17);
       
       xcb_flush(connection);
+      break;
+    case XCB_CONFIGURE_NOTIFY:
+      {
+      xcb_configure_notify_event_t *ev = (xcb_configure_notify_event_t*)event;
+      
+      ptr_configure(ev->event, ev->width, ev->height);
+      }
+      
       break;
     case XCB_KEY_PRESS:
       return;
