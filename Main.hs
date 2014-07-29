@@ -22,7 +22,6 @@ triangles n p1 p2 p3 = do
        a2 = p1 `mid` p3
        a3 = p1 `mid` p2
 
-main = withCanvas (Rectangle 100 100 size (h size)) $ do
-  triangles 5 (size`div`2,0) (0,h size) (size,h size)
-
+main = withCanvas (Rectangle 100 100 size (h size)) $ \(w,h) -> do
+  triangles 5 (w`div`2,0) (0,h) (w,h)
 
