@@ -3,10 +3,10 @@
 -- ghc Main x.c -lxcb
 
 module X
- ( Rectangle(..), Line(..)
+ ( Rectangle(..), Line(..), Bitmap(..)
  , X
  , withCanvas
- , fillRect, drawLine
+ , fillRect, drawLine, paintBitmap
  ) where
 
 import Data.IORef
@@ -15,6 +15,23 @@ import Foreign.Ptr(FunPtr, freeHaskellFunPtr)
 
 data Rectangle = Rectangle Int Int Int Int
 data Line = Line (Int,Int) (Int,Int)
+data Bitmap =
+   Blank
+ | Wall
+ | Goal
+ | Keeper
+ | KeeperOnGoal
+ | Box
+ | BoxOnGoal
+ deriving Eq
+
+bitmapToId Blank = 0
+bitmapToId Wall = 1
+bitmapToId Goal = 2
+bitmapToId Keeper = 3
+bitmapToId KeeperOnGoal = 4
+bitmapToId Box = 5
+bitmapToId BoxOnGoal = 6
 
 newtype X a = X { io :: Int -> Int -> IO a }
 
@@ -28,6 +45,7 @@ foreign import ccall "x_create_graphics_context" io_x_create_graphics_context ::
 foreign import ccall "x_handle_events" io_x_handle_events :: FunPtr (Int -> IO ()) -> FunPtr (Int -> Int -> Int -> IO ()) -> IO ()
 foreign import ccall "x_fill_rectangle" io_x_fill_rectangle :: Int -> Int -> Int -> Int -> Int -> Int -> IO ()
 foreign import ccall "x_draw_line" io_x_draw_line :: Int -> Int -> Int -> Int -> Int -> Int -> IO ()
+foreign import ccall "x_paint_pixmap" io_x_paint_pixmap :: Int -> Int -> Int -> Int -> Int -> IO ()
 
 -- http://www.haskell.org/haskellwiki/GHC/Using_the_FFI
 -- a "wrapper" import gives a factory for converting a Haskell function to a foreign function pointer
@@ -63,3 +81,7 @@ fillRect (Rectangle x y w h) = X (\win gc -> io_x_fill_rectangle win gc x y w h)
 
 drawLine :: Line -> X ()
 drawLine (Line (x1,y1) (x2,y2)) = X (\win gc -> io_x_draw_line win gc x1 y1 x2 y2)
+
+paintBitmap :: Bitmap -> (Int,Int) -> X ()
+paintBitmap b (x,y) = X (\win gc -> io_x_paint_pixmap win gc x y (bitmapToId b))
+
