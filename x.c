@@ -4,6 +4,12 @@
 
 #include <xcb/xcb.h>
 #include <xcb/xcb_image.h>
+#include <xcb/xcb_keysyms.h>
+
+#define XK_Left                          0xff51  /* Move left, left arrow */
+#define XK_Up                            0xff52  /* Move up, up arrow */
+#define XK_Right                         0xff53  /* Move right, right arrow */
+#define XK_Down                          0xff54  /* Move down, down arrow */
 
 #include "borgar/blank.xbm"
 #include "borgar/box.xbm"
@@ -16,12 +22,15 @@
 int initialized = 0;
 xcb_connection_t *connection;
 xcb_screen_t *screen;
+xcb_key_symbols_t *syms;
 
 void x_initialize(void) {
   if(initialized) return;
   
   connection = xcb_connect(NULL, NULL);
   screen = xcb_setup_roots_iterator(xcb_get_setup(connection)).data;
+  syms = xcb_key_symbols_alloc(connection);
+  // TODO: free this up with: xcb_key_symbols_free(syms);
   
   initialized = 1;
 }
@@ -137,7 +146,7 @@ void x_paint_pixmap(int window, int graphics_context, int x, int y, int bitmap_i
 typedef void (fptr_t)(int);
 typedef void (fptr_configure_t)(int,int,int);
 
-void x_handle_events(fptr_t ptr_expose, fptr_configure_t ptr_configure) {
+void x_handle_events(fptr_t ptr_expose, fptr_configure_t ptr_configure, fptr_t ptr_keypress_arrow) {
   xcb_generic_event_t *event;
   
   if(!initialized) return;
@@ -153,14 +162,39 @@ void x_handle_events(fptr_t ptr_expose, fptr_configure_t ptr_configure) {
       break;
     case XCB_CONFIGURE_NOTIFY:
       {
-      xcb_configure_notify_event_t *ev = (xcb_configure_notify_event_t*)event;
-      
-      ptr_configure(ev->event, ev->width, ev->height);
+        xcb_configure_notify_event_t *ev = (xcb_configure_notify_event_t*)event;
+        
+        ptr_configure(ev->event, ev->width, ev->height);
       }
       
       break;
     case XCB_KEY_PRESS:
-      return;
+      {
+        xcb_key_press_event_t *ev = (xcb_key_press_event_t *)event;
+        
+        if (ev->detail == 9) return;
+        
+        xcb_keysym_t sym = xcb_key_press_lookup_keysym(syms, ev, 0);
+        
+        switch(sym) {
+        case XK_Up:
+          ptr_keypress_arrow(0);
+          xcb_flush(connection);
+          break;
+        case XK_Down:
+          ptr_keypress_arrow(1);
+          xcb_flush(connection);
+          break;
+        case XK_Left:
+          ptr_keypress_arrow(2);
+          xcb_flush(connection);
+          break;
+        case XK_Right:
+          ptr_keypress_arrow(3);
+          xcb_flush(connection);
+          break;
+        }
+      }
     }
   }
 }
