@@ -3,6 +3,15 @@
 #include <unistd.h>
 
 #include <xcb/xcb.h>
+#include <xcb/xcb_image.h>
+
+#include "borgar/blank.xbm"
+#include "borgar/box.xbm"
+#include "borgar/box_on_goal.xbm"
+#include "borgar/goal.xbm"
+#include "borgar/keeper.xbm"
+#include "borgar/keeper_on_goal.xbm"
+#include "borgar/wall.xbm"
 
 int initialized = 0;
 xcb_connection_t *connection;
@@ -80,6 +89,49 @@ void x_draw_line(int window, int graphics_context, int x1, int y1, int x2, int y
   p[1] = (xcb_point_t){ x2, y2 };
   
   xcb_poly_line(connection, XCB_COORD_MODE_ORIGIN, window, graphics_context, 2, p);
+}
+
+void x_paint_pixmap(int window, int graphics_context, int x, int y, int bitmap_id) {
+  int w, h;
+  uint8_t *bitmap;
+  xcb_pixmap_t pixmap;
+
+  w = 20;
+  h = 20;
+  
+  switch(bitmap_id) {
+  case 0:
+    bitmap = blank_bits;
+    break;
+  case 1:
+    bitmap = wall_bits;
+    break;
+  case 2:
+    bitmap = goal_bits;
+    break;
+  case 3:
+    bitmap = keeper_bits;
+    break;
+  case 4:
+    bitmap = keeper_on_goal_bits;
+    break;
+  case 5:
+    bitmap = box_bits;
+    break;
+  case 6:
+    bitmap = box_on_goal_bits;
+    break;
+  }
+  
+  pixmap = xcb_create_pixmap_from_bitmap_data(connection, window,
+					      bitmap, w, h,
+					      screen->root_depth, screen->black_pixel, screen->white_pixel,
+					      NULL);
+  
+  xcb_copy_area(connection,
+                pixmap, window, graphics_context,
+                0, 0, x, y,
+                w, h);
 }
 
 typedef void (fptr_t)(int);
