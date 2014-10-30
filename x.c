@@ -153,48 +153,57 @@ void x_handle_events(fptr_t ptr_expose, fptr_configure_t ptr_configure, fptr_t p
   
   xcb_flush(connection);
   
+
+  /* if event = null then expose & block */
   while(event = xcb_wait_for_event(connection)) {
-    switch(event->response_type) {
-    case XCB_EXPOSE:
-      ptr_expose(17);
-      
-      xcb_flush(connection);
-      break;
-    case XCB_CONFIGURE_NOTIFY:
-      {
-        xcb_configure_notify_event_t *ev = (xcb_configure_notify_event_t*)event;
+    while(event != NULL) {
+      switch(event->response_type) {
+      case XCB_EXPOSE:
+        /* ptr_expose(17); */
+        /* xcb_flush(connection); */
+        break;
+      case XCB_CONFIGURE_NOTIFY:
+        {
+          xcb_configure_notify_event_t *ev = (xcb_configure_notify_event_t*)event;
         
-        ptr_configure(ev->event, ev->width, ev->height);
-      }
-      
-      break;
-    case XCB_KEY_PRESS:
-      {
-        xcb_key_press_event_t *ev = (xcb_key_press_event_t *)event;
-        
-        if (ev->detail == 9) return;
-        
-        xcb_keysym_t sym = xcb_key_press_lookup_keysym(syms, ev, 0);
-        
-        switch(sym) {
-        case XK_Up:
-          ptr_keypress_arrow(0);
-          xcb_flush(connection);
-          break;
-        case XK_Down:
-          ptr_keypress_arrow(1);
-          xcb_flush(connection);
-          break;
-        case XK_Left:
-          ptr_keypress_arrow(2);
-          xcb_flush(connection);
-          break;
-        case XK_Right:
-          ptr_keypress_arrow(3);
-          xcb_flush(connection);
-          break;
+          ptr_configure(ev->event, ev->width, ev->height);
         }
+      
+        break;
+      case XCB_KEY_PRESS:
+        {
+          xcb_key_press_event_t *ev = (xcb_key_press_event_t *)event;
+        
+          if (ev->detail == 9) return;
+        
+          xcb_keysym_t sym = xcb_key_press_lookup_keysym(syms, ev, 0);
+        
+          switch(sym) {
+          case XK_Up:
+            ptr_keypress_arrow(0);
+            xcb_flush(connection);
+            break;
+          case XK_Down:
+            ptr_keypress_arrow(1);
+            xcb_flush(connection);
+            break;
+          case XK_Left:
+            ptr_keypress_arrow(2);
+            xcb_flush(connection);
+            break;
+          case XK_Right:
+            ptr_keypress_arrow(3);
+            xcb_flush(connection);
+            break;
+          }
+        }
+
       }
+      
+      event = xcb_poll_for_event(connection);
     }
+
+    ptr_expose(17);
+    xcb_flush(connection);
   }
 }

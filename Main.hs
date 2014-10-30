@@ -1,6 +1,6 @@
 module Main where
 
-import X
+import XO
 
 h a = round (fromIntegral a * sqrt 3 / 2)
 
@@ -23,5 +23,5 @@ triangles n p1 p2 p3 = do
        a3 = p1 `mid` p2
 
 main = withCanvas (Rectangle 100 100 size (h size)) $ \(w,h) -> do
-  triangles 5 (w`div`2,0) (0,h) (w,h)
+  triangles 7 (w`div`2,0) (0,h) (w,h)
 
